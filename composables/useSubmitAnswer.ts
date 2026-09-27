@@ -36,6 +36,8 @@ export interface SubmitResult {
   auto: boolean
   wrong_text: boolean
   too_far: boolean
+  /** Marge d'erreur GPS supérieure au rayon : la réponse attend la décision de l'admin. */
+  imprecise?: boolean
   bonus_pending: boolean
 }
 

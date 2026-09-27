@@ -100,10 +100,26 @@ function removeFile(id: string) {
 /* ---- Texte ---- */
 const text = ref('')
 
-/* ---- Position GPS ---- */
+/* ---- Position GPS ----
+ * Le premier relevé d'un téléphone est souvent approximatif : on écoute le GPS
+ * jusqu'à GPS_MAX_MS, en gardant le meilleur relevé, et on s'arrête dès qu'il
+ * atteint GPS_GOOD_ACCURACY_M.
+ */
+const GPS_MAX_MS = 15000
+const GPS_GOOD_ACCURACY_M = 20
+
 const position = ref<DraftPosition | null>(null)
 const locating = ref(false)
 const locateError = ref<string | null>(null)
+let watchId: number | null = null
+let watchTimer: ReturnType<typeof setTimeout> | undefined
+
+function stopLocating() {
+  if (watchId !== null) navigator.geolocation.clearWatch(watchId)
+  watchId = null
+  clearTimeout(watchTimer)
+  locating.value = false
+}
 
 function locate() {
   locateError.value = null
@@ -111,21 +127,35 @@ function locate() {
     locateError.value = 'La géolocalisation nécessite une connexion sécurisée (HTTPS).'
     return
   }
+  stopLocating()
+  position.value = null
   locating.value = true
-  navigator.geolocation.getCurrentPosition(
+
+  watchId = navigator.geolocation.watchPosition(
     (pos) => {
-      position.value = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }
-      locating.value = false
+      if (!position.value || pos.coords.accuracy < position.value.accuracy) {
+        position.value = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }
+      }
+      if (position.value.accuracy <= GPS_GOOD_ACCURACY_M) stopLocating()
     },
     (err) => {
-      locateError.value = err.code === err.PERMISSION_DENIED
-        ? 'Accès à ta position refusé. Autorise la localisation pour ce site dans les réglages du navigateur.'
-        : 'Position introuvable pour le moment. Réessaie à découvert.'
-      locating.value = false
+      // Une erreur après un premier relevé n'empêche pas d'utiliser le meilleur obtenu.
+      if (!position.value) {
+        locateError.value = err.code === err.PERMISSION_DENIED
+          ? 'Accès à ta position refusé. Autorise la localisation pour ce site dans les réglages du navigateur.'
+          : 'Position introuvable pour le moment. Réessaie à découvert.'
+      }
+      stopLocating()
     },
-    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
+    { enableHighAccuracy: true, maximumAge: 0, timeout: GPS_MAX_MS },
   )
+  watchTimer = setTimeout(() => {
+    if (!position.value) locateError.value = 'Position introuvable pour le moment. Réessaie à découvert.'
+    stopLocating()
+  }, GPS_MAX_MS)
 }
+
+onBeforeUnmount(stopLocating)
 
 /* ---- Commentaire et envoi ---- */
 const comment = ref('')
@@ -232,13 +262,20 @@ const commentPlaceholder = computed(() =>
 
     <!-- Position -->
     <div v-if="accepts.gps" class="gps">
-      <template v-if="position">
+      <template v-if="locating && position">
+        <div class="gps__refining" role="status">
+          <MapPin :size="20" aria-hidden="true" />
+          <span>Précision en cours d’amélioration : ± {{ Math.round(position.accuracy) }} m…</span>
+        </div>
+        <AppButton variant="outline" block @click="stopLocating">Utiliser cette position</AppButton>
+      </template>
+      <template v-else-if="position">
         <div class="gps__done">
           <Check :size="20" aria-hidden="true" />
           <span>Position obtenue <span class="gps__accuracy">(précision ± {{ Math.round(position.accuracy) }} m)</span></span>
         </div>
         <div class="gps__actions">
-          <AppButton variant="outline" :disabled="locating || submitting" @click="locate">
+          <AppButton variant="outline" :disabled="submitting" @click="locate">
             <RefreshCw :size="16" aria-hidden="true" /> Actualiser
           </AppButton>
           <AppButton variant="outline" :disabled="submitting" @click="position = null">Retirer</AppButton>
@@ -248,8 +285,8 @@ const commentPlaceholder = computed(() =>
         <MapPin :size="28" aria-hidden="true" />
         {{ locating ? 'Localisation en cours…' : 'Envoyer ma position' }}
       </button>
-      <p v-if="position && position.accuracy > 50" class="hint">
-        Précision faible : si possible, sors à découvert puis actualise.
+      <p v-if="position && !locating && position.accuracy > 50" class="hint">
+        Précision faible : si possible, sors à découvert puis actualise. Sinon, l’organisateur vérifiera ta réponse lui-même.
       </p>
       <p v-if="locateError" class="field__error">{{ locateError }}</p>
     </div>
@@ -269,7 +306,7 @@ const commentPlaceholder = computed(() =>
 
     <p v-if="submitError" class="form-error" role="alert">{{ submitError }}</p>
 
-    <AppButton type="submit" size="lg" block :disabled="!hasAnswer || preparing" :loading="submitting">
+    <AppButton type="submit" size="lg" block :disabled="!hasAnswer || preparing || locating" :loading="submitting">
       {{ submitting ? 'Envoi…' : 'Envoyer la réponse' }}
     </AppButton>
   </form>
@@ -396,6 +433,17 @@ const commentPlaceholder = computed(() =>
   background: var(--status-validated-bg);
   color: var(--status-validated-fg);
   font-weight: 700;
+}
+
+.gps__refining {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--card-radius);
+  background: var(--status-pending-bg);
+  color: var(--status-pending-fg);
+  font-weight: 600;
 }
 
 .gps__accuracy {

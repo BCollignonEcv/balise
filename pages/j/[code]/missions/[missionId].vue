@@ -61,7 +61,9 @@ function onSubmitted(r: SubmitResult) {
     result.value = {
       tone: 'pending',
       title: 'Réponse envoyée !',
-      lines: ['Elle est en attente de validation par l’organisateur.'],
+      lines: r.imprecise
+        ? ['Ta position était trop imprécise pour être vérifiée automatiquement : l’organisateur va la contrôler.']
+        : ['Elle est en attente de validation par l’organisateur.'],
     }
   }
   gameData.refresh()
