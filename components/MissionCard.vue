@@ -16,6 +16,8 @@ const props = defineProps<{
   /** Dernière réponse refusée pendant la partie : la mission reste à faire. */
   lastRefused?: boolean
   to?: RouteLocationRaw
+  /** « grid » : carte verticale ; « list » : ligne compacte (vignette à gauche). */
+  layout?: 'grid' | 'list'
 }>()
 
 const repeatable = computed(() => (props.maxValidations ?? 1) > 1)
@@ -31,15 +33,23 @@ const tag = computed(() => (props.to ? resolveComponent('NuxtLink') : 'article')
 </script>
 
 <template>
-  <component :is="tag" :to="to" class="mission-card" :class="`mission-card--${status}`">
+  <component
+    :is="tag"
+    :to="to"
+    class="mission-card"
+    :class="[`mission-card--${status}`, { 'mission-card--list': layout === 'list' }]"
+  >
     <div class="mission-card__media" :class="{ placeholder: !imageUrl }">
       <img v-if="imageUrl" :src="imageUrl" alt="" loading="lazy">
       <AnswerTypeIcon class="mission-card__type" :types="answerTypes" />
-      <PointsBadge class="mission-card__points" :points="basePoints" />
+      <PointsBadge v-if="layout !== 'list'" class="mission-card__points" :points="basePoints" />
     </div>
 
     <div class="mission-card__body">
-      <h3 class="mission-card__title">{{ title }}</h3>
+      <div class="mission-card__heading">
+        <h3 class="mission-card__title">{{ title }}</h3>
+        <PointsBadge v-if="layout === 'list'" :points="basePoints" />
+      </div>
 
       <div class="mission-card__meta">
         <BonusBadge v-if="hasBonus" />
@@ -115,6 +125,42 @@ a.mission-card:active {
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-3) var(--space-4);
+}
+
+.mission-card__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* ---- Disposition en liste : vignette à gauche, texte à droite ---- */
+.mission-card--list {
+  flex-direction: row;
+}
+
+.mission-card--list .mission-card__media {
+  flex: none;
+  width: 104px;
+  aspect-ratio: auto;
+  min-height: 104px;
+}
+
+.mission-card--list .mission-card__type {
+  top: auto;
+  bottom: var(--space-2);
+}
+
+.mission-card--list .mission-card__body {
+  min-width: 0;
+  padding: var(--space-3);
+}
+
+.mission-card--list .mission-card__footer {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .mission-card__title {

@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { defaultTokensCss } from './utils/theme'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
 
@@ -26,7 +28,10 @@ export default defineNuxtConfig({
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
         { name: 'theme-color', content: '#F4EFE6' },
       ],
+      // Thème par défaut (tokens) inscrit dans le HTML : présent partout, page d'erreur comprise.
+      style: [{ key: 'default-tokens', children: defaultTokensCss() }],
       link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {

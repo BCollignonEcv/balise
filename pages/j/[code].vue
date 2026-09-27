@@ -95,6 +95,8 @@ watch(() => game.value?.id, (id, previous) => {
 </script>
 
 <template>
+  <PlayerOfflineBanner />
+
   <div v-if="!ready || state.loading" class="screen">
     <p class="muted">Chargement…</p>
   </div>

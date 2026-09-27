@@ -100,7 +100,7 @@ const statuses: MissionStatus[] = ['todo', 'pending', 'validated', 'refused']
   <main class="sg">
     <header class="sg__header">
       <h1>Design system</h1>
-      <p class="sg__muted">Étape 1 · tokens et composants de base</p>
+      <p class="sg__muted">Tokens et composants de base · <NuxtLink to="/admin">retour à l’admin</NuxtLink></p>
     </header>
 
     <section class="sg__panel">

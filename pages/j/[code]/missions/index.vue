@@ -1,5 +1,24 @@
 <script setup lang="ts">
+import { LayoutGrid, List } from '@lucide/vue'
+
 const { game, me } = usePlayerSession()
+
+/* Affichage grille ou liste : mémorisé sur ce téléphone (confort, sans garantie de stockage). */
+const LAYOUT_KEY = 'balise-missions-layout'
+const layout = ref<'grid' | 'list'>('grid')
+onMounted(() => {
+  try {
+    if (localStorage.getItem(LAYOUT_KEY) === 'list') layout.value = 'list'
+  }
+  catch { /* stockage indisponible (navigation privée…) */ }
+})
+function setLayout(value: 'grid' | 'list') {
+  layout.value = value
+  try {
+    localStorage.setItem(LAYOUT_KEY, value)
+  }
+  catch { /* idem */ }
+}
 const { data } = usePlayerGameData()
 const { gameOver, notStarted } = useGameClock()
 
@@ -50,19 +69,29 @@ const filters: { value: Filter; label: string }[] = [
 
     <PlayerScoreCard :score="score" />
 
-    <div class="filters" role="tablist" aria-label="Filtrer les missions">
-      <button
-        v-for="f in filters"
-        :key="f.value"
-        type="button"
-        role="tab"
-        class="filter"
-        :class="{ 'is-active': filter === f.value }"
-        :aria-selected="filter === f.value"
-        @click="filter = f.value"
-      >
-        {{ f.label }} · {{ counts[f.value] }}
-      </button>
+    <div class="toolbar">
+      <div class="filters" role="tablist" aria-label="Filtrer les missions">
+        <button
+          v-for="f in filters"
+          :key="f.value"
+          type="button"
+          role="tab"
+          class="filter"
+          :class="{ 'is-active': filter === f.value }"
+          :aria-selected="filter === f.value"
+          @click="filter = f.value"
+        >
+          {{ f.label }} · {{ counts[f.value] }}
+        </button>
+      </div>
+      <div class="layout-toggle" role="group" aria-label="Affichage des missions">
+        <button type="button" :class="{ 'is-active': layout === 'grid' }" :aria-pressed="layout === 'grid'" aria-label="Grille" @click="setLayout('grid')">
+          <LayoutGrid :size="18" aria-hidden="true" />
+        </button>
+        <button type="button" :class="{ 'is-active': layout === 'list' }" :aria-pressed="layout === 'list'" aria-label="Liste" @click="setLayout('list')">
+          <List :size="18" aria-hidden="true" />
+        </button>
+      </div>
     </div>
 
     <p v-if="data.error" class="form-error" role="alert">{{ data.error }}</p>
@@ -72,8 +101,9 @@ const filters: { value: Filter; label: string }[] = [
       {{ filter === 'todo' ? 'Plus aucune mission à faire. Bravo !' : 'Aucune mission validée pour l’instant.' }}
     </p>
 
-    <div v-else class="grid">
+    <div v-else :class="layout === 'list' ? 'list' : 'grid'">
       <MissionCard
+        :layout="layout"
         v-for="{ mission, progress } in visible"
         :key="mission.id"
         :to="`/j/${game.code}/missions/${mission.id}`"
@@ -117,11 +147,50 @@ const filters: { value: Filter; label: string }[] = [
   text-align: center;
 }
 
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .filters {
   display: flex;
+  flex: 1;
   gap: var(--space-2);
+  min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
+}
+
+.layout-toggle {
+  display: flex;
+  flex: none;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+}
+
+.layout-toggle button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--color-text-muted);
+}
+
+.layout-toggle button.is-active {
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .filter {
