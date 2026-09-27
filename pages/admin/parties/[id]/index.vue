@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Archive, ArchiveRestore, Check, Copy, Inbox, ListChecks, Palette, Users } from '@lucide/vue'
+import { Archive, ArchiveRestore, Check, Copy, Inbox, ListChecks, Palette, RotateCcw, Users } from '@lucide/vue'
 import type { Game, GameFormValues } from '~/types/database'
 import { NuxtLink } from '#components'
 
@@ -17,6 +17,7 @@ const saving = ref(false)
 const saveError = ref<string | null>(null)
 const savedAt = ref<number | null>(null)
 const actionError = ref<string | null>(null)
+const actionNotice = ref<string | null>(null)
 const busy = ref(false)
 const copied = ref(false)
 
@@ -26,6 +27,7 @@ const shareUrl = computed(() => (game.value ? `${window.location.origin}/j/${gam
 
 const missionCount = ref<number | null>(null)
 const participantCount = ref<number | null>(null)
+const pendingCount = ref<number | null>(null)
 
 const sections = computed(() => [
   {
@@ -40,17 +42,28 @@ const sections = computed(() => [
     to: `/admin/parties/${gameId}/equipes`,
     detail: participantCount.value === null ? '' : `${participantCount.value} participant${participantCount.value > 1 ? 's' : ''}`,
   },
-  { label: 'Soumissions', icon: Inbox, detail: 'Étape 7' },
+  {
+    label: 'Soumissions',
+    icon: Inbox,
+    to: `/admin/parties/${gameId}/soumissions`,
+    detail: pendingCount.value === null ? '' : pendingCount.value ? `${pendingCount.value} en attente` : 'Rien en attente',
+  },
   { label: 'Thème graphique', icon: Palette, detail: 'Étape 9' },
 ])
 
 async function load() {
   loading.value = true
-  const [gameRes, missionsRes, participantsRes] = await Promise.all([
+  const [gameRes, missionsRes, participantsRes, pendingRes] = await Promise.all([
     supabase.from('games').select('*').eq('id', gameId).maybeSingle(),
     supabase.from('missions').select('id', { count: 'exact', head: true }).eq('game_id', gameId),
     supabase.from('participants').select('id', { count: 'exact', head: true }).eq('game_id', gameId),
+    supabase
+      .from('submissions')
+      .select('id', { count: 'exact', head: true })
+      .eq('game_id', gameId)
+      .or('status.eq.pending,bonus_state.eq.pending'),
   ])
+  pendingCount.value = pendingRes.count ?? null
   if (gameRes.error) loadError.value = friendlyError(gameRes.error)
   else if (!gameRes.data) loadError.value = 'Partie introuvable.'
   else game.value = gameRes.data as Game
@@ -100,6 +113,37 @@ function editSettings() {
   settingsPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   // Laisse le défilement démarrer avant de donner le focus (sinon iOS saute brutalement).
   setTimeout(() => gameForm.value?.focusName(), 300)
+}
+
+/** Efface toutes les réponses et ajustements (répétition avant le vrai jeu). */
+async function resetResponses() {
+  if (!game.value) return
+  const confirmation = window.prompt(
+    `Toutes les réponses, fichiers et ajustements de points de « ${game.value.name} » seront définitivement supprimés.\n`
+    + 'Missions, équipes et participants sont conservés.\n\n'
+    + `Pour confirmer, tape le code de la partie : ${game.value.code}`,
+  )
+  if (confirmation === null) return
+  if (confirmation.trim().toUpperCase() !== game.value.code) {
+    actionError.value = 'Code incorrect : rien n’a été supprimé.'
+    return
+  }
+  busy.value = true
+  actionError.value = null
+  actionNotice.value = null
+  const { data, error } = await supabase.rpc('reset_game_responses', { p_game_id: gameId })
+  if (error) {
+    busy.value = false
+    actionError.value = friendlyError(error)
+    return
+  }
+  const paths = (data ?? []) as string[]
+  for (let i = 0; i < paths.length; i += 100) {
+    await supabase.storage.from(SUBMISSIONS_BUCKET).remove(paths.slice(i, i + 100))
+  }
+  busy.value = false
+  pendingCount.value = 0
+  actionNotice.value = 'Toutes les réponses ont été effacées.'
 }
 
 async function toggleArchive() {
@@ -201,7 +245,16 @@ onMounted(async () => {
             {{ game.archived_at ? 'Désarchiver' : 'Archiver' }}
           </AppButton>
         </div>
+        <div class="reset">
+          <p class="field__hint">
+            Pour une répétition : efface toutes les réponses et les ajustements de points, en gardant missions, équipes et participants.
+          </p>
+          <AppButton variant="danger" :disabled="busy" @click="resetResponses">
+            <RotateCcw :size="16" aria-hidden="true" /> Réinitialiser les réponses
+          </AppButton>
+        </div>
         <p v-if="actionError" class="form-error" role="alert">{{ actionError }}</p>
+        <p v-if="actionNotice" class="saved" role="status"><Check :size="16" aria-hidden="true" /> {{ actionNotice }}</p>
       </section>
     </template>
   </div>
@@ -214,6 +267,15 @@ onMounted(async () => {
   background: var(--status-validated-bg);
   color: var(--status-validated-fg);
   font-weight: 600;
+}
+
+.reset {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
 }
 
 #reglages {
