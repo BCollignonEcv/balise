@@ -18,7 +18,13 @@ const code = computed(() => String(route.params.code ?? '').toUpperCase())
 const isJoinPage = computed(() => route.name === 'j-code')
 const ready = ref(false)
 
-useHead(() => ({ title: game.value ? `${game.value.name} · Jeu de piste` : 'Jeu de piste' }))
+useHead(() => ({
+  title: game.value ? `${game.value.name} · Jeu de piste` : 'Jeu de piste',
+  // CSS personnalisé de la partie : uniquement sur les pages participant (retiré en quittant)
+  style: game.value?.custom_css
+    ? [{ key: 'game-custom-css', innerHTML: sanitizeCustomCss(game.value.custom_css) }]
+    : [],
+}))
 
 /** Envoie l'appareil au bon écran selon qu'il a déjà choisi un nom. */
 function guard() {

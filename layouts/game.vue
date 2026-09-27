@@ -19,7 +19,8 @@ const { style } = useGameTheme(theme)
   padding-bottom: env(safe-area-inset-bottom, 0px);
   background-color: var(--color-bg);
   background-image: var(--page-bg-image);
-  background-size: cover;
+  background-size: var(--page-bg-size);
+  background-repeat: var(--page-bg-repeat);
   background-position: center top;
   color: var(--color-text);
   font-family: var(--font-body);

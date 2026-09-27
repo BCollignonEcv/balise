@@ -32,21 +32,23 @@ export const DEFAULT_TOKENS = {
   'font-heading': 'Fraunces',
   'font-body': 'Instrument Sans',
 
-  // Cartes mission
-  'card-bg': '#FFFDF8',
+  // Cartes mission (« var(…) » : suit automatiquement la couleur de base)
+  'card-bg': 'var(--color-surface)',
   'card-bg-image': 'none',
   'card-border-width': '1px',
-  'card-border-color': '#DED6C7',
+  'card-border-color': 'var(--color-border)',
   'card-radius': '16px',
   'card-shadow': 'none',
 
   // Badge de points
-  'badge-points-bg': '#C2410C',
-  'badge-points-fg': '#FFFFFF',
+  'badge-points-bg': 'var(--color-primary)',
+  'badge-points-fg': 'var(--color-on-primary)',
   'badge-points-radius': '999px',
 
   // Page
   'page-bg-image': 'none',
+  'page-bg-size': 'cover',
+  'page-bg-repeat': 'no-repeat',
 } as const
 
 export type TokenName = keyof typeof DEFAULT_TOKENS
@@ -67,6 +69,26 @@ const FONT_FALLBACKS: Partial<Record<TokenName, string>> = {
 function cssValue(name: TokenName, value: string): string {
   const fallback = FONT_FALLBACKS[name]
   return fallback ? `'${value}', ${fallback}` : value
+}
+
+/** Ne garde que les tokens qui diffèrent du thème par défaut (ce qui est stocké en base). */
+export function tokenOverrides(tokens: Record<TokenName, string>): ThemeTokens {
+  const overrides: ThemeTokens = {}
+  for (const name of Object.keys(DEFAULT_TOKENS) as TokenName[]) {
+    const value = tokens[name]?.trim()
+    if (value && value !== DEFAULT_TOKENS[name]) overrides[name] = value
+  }
+  return overrides
+}
+
+/** Thème complet : valeurs par défaut + surcharges. */
+export function resolveTokens(overrides: ThemeTokens = {}): Record<TokenName, string> {
+  return { ...DEFAULT_TOKENS, ...overrides }
+}
+
+/** Neutralise une éventuelle balise </style> dans le CSS personnalisé. */
+export function sanitizeCustomCss(css: string | null | undefined): string {
+  return (css ?? '').replace(/<\/?style/gi, '')
 }
 
 /** Variables CSS à appliquer pour un ensemble de tokens (surcharges uniquement si `tokens` est partiel). */

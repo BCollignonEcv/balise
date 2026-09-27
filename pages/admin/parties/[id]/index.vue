@@ -48,7 +48,12 @@ const sections = computed(() => [
     to: `/admin/parties/${gameId}/soumissions`,
     detail: pendingCount.value === null ? '' : pendingCount.value ? `${pendingCount.value} en attente` : 'Rien en attente',
   },
-  { label: 'Thème graphique', icon: Palette, detail: 'Étape 9' },
+  {
+    label: 'Thème graphique',
+    icon: Palette,
+    to: `/admin/parties/${gameId}/theme`,
+    detail: game.value && Object.keys(game.value.theme?.tokens ?? {}).length ? 'Personnalisé' : 'Par défaut',
+  },
 ])
 
 async function load() {
