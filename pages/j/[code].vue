@@ -12,6 +12,7 @@ const route = useRoute()
 const supabase = usePlayerSupabase()
 const { state, game, me, load, setNotice } = usePlayerSession()
 const gameData = usePlayerGameData()
+const leaderboard = useLeaderboard()
 
 const code = computed(() => String(route.params.code ?? '').toUpperCase())
 const isJoinPage = computed(() => route.name === 'j-code')
@@ -39,6 +40,10 @@ function subscribe(gameId: string) {
       }
       await load(code.value, { silent: true })
     })
+    // Une validation ou un ajustement a changé les scores : on recharge le classement.
+    .on('broadcast', { event: 'scores_changed' }, () => {
+      if (me.value) leaderboard.refresh()
+    })
     // Date limite prolongée, partie terminée… (reçu uniquement une fois membre de la partie)
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` }, () => {
       load(code.value, { silent: true })
@@ -51,11 +56,15 @@ function onVisible() {
   if (document.visibilityState !== 'visible') return
   load(code.value, { silent: true })
   gameData.refresh()
+  leaderboard.refresh()
 }
 
-/* Missions et soumissions de l'équipe : chargées dès que le participant est identifié. */
+/* Missions, soumissions de l'équipe et classement : chargés dès que le participant est identifié. */
 watch([() => game.value?.id, () => me.value?.team_id], ([gameId, teamId]) => {
-  if (gameId && teamId) gameData.start(gameId, teamId)
+  if (gameId && teamId) {
+    gameData.start(gameId, teamId)
+    leaderboard.load(gameId)
+  }
   else gameData.stop()
 }, { immediate: true })
 

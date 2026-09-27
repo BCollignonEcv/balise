@@ -35,7 +35,11 @@ const filters: { value: Filter; label: string }[] = [
 
 <template>
   <main v-if="game && me" class="player-page">
-    <PlayerHeader :me="me" />
+    <PlayerHeader :me="me">
+      <template #aside>
+        <PlayerRankPill :team-id="me.team_id" :to="`/j/${game.code}/classement`" />
+      </template>
+    </PlayerHeader>
 
     <PlayerCountdown />
 
