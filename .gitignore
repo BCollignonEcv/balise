@@ -1,0 +1,29 @@
+# Nuxt
+.output
+.data
+.nuxt
+.nitro
+.cache
+dist
+
+# Dépendances
+node_modules
+
+# Logs
+logs
+*.log
+
+# Divers
+.DS_Store
+.fleet
+.idea
+.vercel
+
+# Variables d'environnement (ne jamais versionner)
+.env
+.env.*
+!.env.example
+
+# Supabase CLI
+supabase/.temp
+supabase/.branches

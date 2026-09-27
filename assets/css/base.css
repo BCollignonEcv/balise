@@ -1,0 +1,167 @@
+/*
+ * Styles de base. Les tokens surchargeables (couleurs, polices, cartes…) sont
+ * injectés depuis utils/theme.ts. Ici : uniquement des tokens structurels
+ * non thématisables et des règles globales qui consomment les tokens.
+ */
+
+:root {
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --tap-min: 44px;
+
+  /* Admin : fond neutre, jamais thématisé */
+  --admin-bg: #F2F1EE;
+  --admin-live-bg: #DCF0E0;
+  --admin-live-fg: #146C2E;
+}
+
+/*
+ * Nuances dérivées des tokens thématisables. Redéclarées sur .themed (racine
+ * des pages participant) pour être recalculées avec les couleurs surchargées.
+ */
+:root,
+.themed {
+  --color-primary-soft: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+  --color-muted-surface: color-mix(in srgb, var(--color-border) 45%, var(--color-bg));
+  --placeholder-stripe: color-mix(in srgb, var(--color-border) 60%, var(--color-bg));
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+  line-height: 1.15;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+/* ---- Formulaires ---- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field__label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.field__hint {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+
+.field__error {
+  color: var(--status-refused-fg);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: 1rem; /* ≥ 16px : évite le zoom automatique sur iOS */
+}
+
+.input:disabled {
+  opacity: 0.6;
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+textarea.input {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.form-error {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--status-refused-bg);
+  color: var(--status-refused-fg);
+  font-weight: 500;
+}
+
+/* Zone d'image vide (motif rayé des maquettes) */
+.placeholder {
+  background-color: var(--color-muted-surface);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--placeholder-stripe) 0 12px,
+    transparent 12px 24px
+  );
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
