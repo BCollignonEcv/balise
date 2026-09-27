@@ -85,8 +85,8 @@ async function destroy() {
           {{ mission.title }}
         </h3>
         <p class="card__meta">
-          <template v-if="team"><span class="dot" :style="{ background: team.color }" /> {{ team.name }} · </template>
-          {{ s.participant?.name ?? 'Participant supprimé' }} · {{ formatTime(s.created_at) }} · {{ mission.base_points }} pts de base
+          <span v-if="team" class="card__team"><span class="dot" :style="{ background: team.color }" />{{ team.name }} ·</span>
+          <span>{{ s.participant?.name ?? 'Participant supprimé' }} · {{ formatTime(s.created_at) }} · {{ mission.base_points }} pts de base</span>
         </p>
       </div>
       <div class="card__pills">
@@ -218,8 +218,16 @@ async function destroy() {
   font-size: 0.875rem;
 }
 
+.card__team {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  white-space: nowrap;
+}
+
 .dot {
   display: inline-block;
+  flex: none;
   width: 10px;
   height: 10px;
   border-radius: 50%;

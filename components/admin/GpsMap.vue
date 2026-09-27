@@ -20,8 +20,10 @@ onMounted(async () => {
   const L = await import('leaflet')
   if (!el.value) return
 
+  // Une vue initiale est indispensable avant d'ajouter des cercles (rayon en mètres).
   map = L.map(el.value, { zoomControl: true, attributionControl: true, scrollWheelZoom: false })
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    .setView([props.lat, props.lng], 17)
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap',
   }).addTo(map)
