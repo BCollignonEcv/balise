@@ -29,7 +29,7 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#F4EFE6' },
       ],
       // Thème par défaut (tokens) inscrit dans le HTML : présent partout, page d'erreur comprise.
-      style: [{ key: 'default-tokens', children: defaultTokensCss() }],
+      style: [{ key: 'default-tokens', innerHTML: defaultTokensCss() }],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
