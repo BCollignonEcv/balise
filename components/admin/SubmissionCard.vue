@@ -104,11 +104,9 @@ async function destroy() {
     </div>
 
     <template v-if="s.lat !== null && s.lng !== null">
-      <AdminGpsMap :lat="s.lat" :lng="s.lng" :accuracy="s.accuracy_m" :target="target" />
+      <AdminGpsMap :lat="s.lat" :lng="s.lng" :accuracy="s.accuracy_m" :target="target" :distance="s.distance_m" />
       <p class="muted">
-        <template v-if="s.distance_m !== null">À {{ Math.round(s.distance_m) }} m de la cible<template v-if="target"> (rayon {{ target.radius }} m)</template> · </template>
-        précision ± {{ s.accuracy_m ? Math.round(s.accuracy_m) : '?' }} m ·
-        <a :href="`https://www.openstreetmap.org/?mlat=${s.lat}&mlon=${s.lng}#map=18/${s.lat}/${s.lng}`" target="_blank" rel="noopener">ouvrir la carte</a>
+        <a :href="`https://www.openstreetmap.org/?mlat=${s.lat}&mlon=${s.lng}#map=18/${s.lat}/${s.lng}`" target="_blank" rel="noopener">Ouvrir la position en plein écran</a>
       </p>
     </template>
 
